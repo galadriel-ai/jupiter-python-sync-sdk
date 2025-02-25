@@ -17,6 +17,7 @@ from solders.system_program import transfer, TransferParams
 from solana.rpc.types import TxOpts
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Processed
+from solana.rpc.api import Client  # Add this import
 
 from spl.token.instructions import create_associated_token_account, get_associated_token_address, sync_native, SyncNativeParams, close_account, CloseAccountParams
 from spl.token.constants import *
@@ -30,16 +31,12 @@ from anchorpy import AccountsCoder
 
 
 class Jupiter_DCA():
-    
+
     DCA_PROGRAM_ID = Pubkey.from_string("DCA265Vj8a9CEuX1eb1LWRnDT7uK6q1xMipnNyatn23M")
     IDL = {"version":"0.1.0","name":"dca","instructions":[{"name":"openDca","accounts":[{"name":"dca","isMut":True,"isSigner":False},{"name":"user","isMut":True,"isSigner":True},{"name":"inputMint","isMut":False,"isSigner":False},{"name":"outputMint","isMut":False,"isSigner":False},{"name":"userAta","isMut":True,"isSigner":False},{"name":"inAta","isMut":True,"isSigner":False},{"name":"outAta","isMut":True,"isSigner":False},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False},{"name":"eventAuthority","isMut":False,"isSigner":False},{"name":"program","isMut":False,"isSigner":False}],"args":[{"name":"applicationIdx","type":"u64"},{"name":"inAmount","type":"u64"},{"name":"inAmountPerCycle","type":"u64"},{"name":"cycleFrequency","type":"i64"},{"name":"minPrice","type":{"option":"u64"}},{"name":"maxPrice","type":{"option":"u64"}},{"name":"startAt","type":{"option":"i64"}},{"name":"closeWsolInAta","type":{"option":"bool"}}]},{"name":"openDcaV2","accounts":[{"name":"dca","isMut":True,"isSigner":False},{"name":"user","isMut":False,"isSigner":True},{"name":"payer","isMut":True,"isSigner":True},{"name":"inputMint","isMut":False,"isSigner":False},{"name":"outputMint","isMut":False,"isSigner":False},{"name":"userAta","isMut":True,"isSigner":False},{"name":"inAta","isMut":True,"isSigner":False},{"name":"outAta","isMut":True,"isSigner":False},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False},{"name":"eventAuthority","isMut":False,"isSigner":False},{"name":"program","isMut":False,"isSigner":False}],"args":[{"name":"applicationIdx","type":"u64"},{"name":"inAmount","type":"u64"},{"name":"inAmountPerCycle","type":"u64"},{"name":"cycleFrequency","type":"i64"},{"name":"minPrice","type":{"option":"u64"}},{"name":"maxPrice","type":{"option":"u64"}},{"name":"startAt","type":{"option":"i64"}}]},{"name":"closeDca","accounts":[{"name":"user","isMut":True,"isSigner":True},{"name":"dca","isMut":True,"isSigner":False},{"name":"inputMint","isMut":False,"isSigner":False},{"name":"outputMint","isMut":False,"isSigner":False},{"name":"inAta","isMut":True,"isSigner":False},{"name":"outAta","isMut":True,"isSigner":False},{"name":"userInAta","isMut":True,"isSigner":False},{"name":"userOutAta","isMut":True,"isSigner":False},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False},{"name":"eventAuthority","isMut":False,"isSigner":False},{"name":"program","isMut":False,"isSigner":False}],"args":[]},{"name":"withdraw","accounts":[{"name":"user","isMut":True,"isSigner":True},{"name":"dca","isMut":True,"isSigner":False},{"name":"inputMint","isMut":False,"isSigner":False},{"name":"outputMint","isMut":False,"isSigner":False},{"name":"dcaAta","isMut":True,"isSigner":False},{"name":"userInAta","isMut":True,"isSigner":False,"isOptional":True},{"name":"userOutAta","isMut":True,"isSigner":False,"isOptional":True},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False},{"name":"eventAuthority","isMut":False,"isSigner":False},{"name":"program","isMut":False,"isSigner":False}],"args":[{"name":"withdrawParams","type":{"defined":"WithdrawParams"}}]},{"name":"deposit","accounts":[{"name":"user","isMut":True,"isSigner":True},{"name":"dca","isMut":True,"isSigner":False},{"name":"inAta","isMut":True,"isSigner":False},{"name":"userInAta","isMut":True,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"eventAuthority","isMut":False,"isSigner":False},{"name":"program","isMut":False,"isSigner":False}],"args":[{"name":"depositIn","type":"u64"}]},{"name":"withdrawFees","accounts":[{"name":"admin","isMut":True,"isSigner":True},{"name":"mint","isMut":False,"isSigner":False},{"name":"feeAuthority","isMut":False,"isSigner":False,"docs":["CHECK"]},{"name":"programFeeAta","isMut":True,"isSigner":False},{"name":"adminFeeAta","isMut":True,"isSigner":False},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False}],"args":[{"name":"amount","type":"u64"}]},{"name":"initiateFlashFill","accounts":[{"name":"keeper","isMut":True,"isSigner":True},{"name":"dca","isMut":True,"isSigner":False},{"name":"inputMint","isMut":False,"isSigner":False,"docs":["The token to borrow"]},{"name":"keeperInAta","isMut":True,"isSigner":False,"docs":["The account to send borrowed tokens to"]},{"name":"inAta","isMut":True,"isSigner":False,"docs":["The account to borrow from"]},{"name":"outAta","isMut":False,"isSigner":False,"docs":["The account to repay to"]},{"name":"instructionsSysvar","isMut":False,"isSigner":False,"docs":["Solana Instructions Sysvar"]},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False}],"args":[]},{"name":"fulfillFlashFill","accounts":[{"name":"keeper","isMut":True,"isSigner":True},{"name":"dca","isMut":True,"isSigner":False},{"name":"inputMint","isMut":False,"isSigner":False},{"name":"outputMint","isMut":False,"isSigner":False},{"name":"keeperInAta","isMut":False,"isSigner":False},{"name":"inAta","isMut":False,"isSigner":False},{"name":"outAta","isMut":False,"isSigner":False},{"name":"feeAuthority","isMut":False,"isSigner":False,"docs":["CHECK"]},{"name":"feeAta","isMut":True,"isSigner":False},{"name":"instructionsSysvar","isMut":False,"isSigner":False,"docs":["Solana Instructions Sysvar"]},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False},{"name":"eventAuthority","isMut":False,"isSigner":False},{"name":"program","isMut":False,"isSigner":False}],"args":[{"name":"repayAmount","type":"u64"}]},{"name":"transfer","accounts":[{"name":"keeper","isMut":True,"isSigner":True},{"name":"dca","isMut":True,"isSigner":False},{"name":"user","isMut":True,"isSigner":False},{"name":"outputMint","isMut":False,"isSigner":False},{"name":"dcaOutAta","isMut":True,"isSigner":False},{"name":"userOutAta","isMut":True,"isSigner":False,"isOptional":True},{"name":"intermediateAccount","isMut":True,"isSigner":False,"isOptional":True},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False},{"name":"eventAuthority","isMut":False,"isSigner":False},{"name":"program","isMut":False,"isSigner":False}],"args":[]},{"name":"endAndClose","accounts":[{"name":"keeper","isMut":True,"isSigner":True},{"name":"dca","isMut":True,"isSigner":False},{"name":"inputMint","isMut":False,"isSigner":False},{"name":"outputMint","isMut":False,"isSigner":False},{"name":"inAta","isMut":True,"isSigner":False},{"name":"outAta","isMut":True,"isSigner":False},{"name":"user","isMut":True,"isSigner":False},{"name":"userOutAta","isMut":True,"isSigner":False,"isOptional":True},{"name":"initUserOutAta","isMut":True,"isSigner":False,"isOptional":True},{"name":"intermediateAccount","isMut":True,"isSigner":False,"isOptional":True},{"name":"systemProgram","isMut":False,"isSigner":False},{"name":"tokenProgram","isMut":False,"isSigner":False},{"name":"associatedTokenProgram","isMut":False,"isSigner":False},{"name":"eventAuthority","isMut":False,"isSigner":False},{"name":"program","isMut":False,"isSigner":False}],"args":[]}],"accounts":[{"name":"Dca","type":{"kind":"struct","fields":[{"name":"user","type":"publicKey"},{"name":"inputMint","type":"publicKey"},{"name":"outputMint","type":"publicKey"},{"name":"idx","type":"u64"},{"name":"nextCycleAt","type":"i64"},{"name":"inDeposited","type":"u64"},{"name":"inWithdrawn","type":"u64"},{"name":"outWithdrawn","type":"u64"},{"name":"inUsed","type":"u64"},{"name":"outReceived","type":"u64"},{"name":"inAmountPerCycle","type":"u64"},{"name":"cycleFrequency","type":"i64"},{"name":"nextCycleAmountLeft","type":"u64"},{"name":"inAccount","type":"publicKey"},{"name":"outAccount","type":"publicKey"},{"name":"minOutAmount","type":"u64"},{"name":"maxOutAmount","type":"u64"},{"name":"keeperInBalanceBeforeBorrow","type":"u64"},{"name":"dcaOutBalanceBeforeSwap","type":"u64"},{"name":"createdAt","type":"i64"},{"name":"bump","type":"u8"}]}}],"types":[{"name":"WithdrawParams","type":{"kind":"struct","fields":[{"name":"withdrawAmount","type":"u64"},{"name":"withdrawal","type":{"defined":"Withdrawal"}}]}},{"name":"Withdrawal","type":{"kind":"enum","variants":[{"name":"In"},{"name":"Out"}]}}],"events":[{"name":"CollectedFee","fields":[{"name":"userKey","type":"publicKey","index":False},{"name":"dcaKey","type":"publicKey","index":False},{"name":"mint","type":"publicKey","index":False},{"name":"amount","type":"u64","index":False}]},{"name":"Filled","fields":[{"name":"userKey","type":"publicKey","index":False},{"name":"dcaKey","type":"publicKey","index":False},{"name":"inputMint","type":"publicKey","index":False},{"name":"outputMint","type":"publicKey","index":False},{"name":"inAmount","type":"u64","index":False},{"name":"outAmount","type":"u64","index":False},{"name":"feeMint","type":"publicKey","index":False},{"name":"fee","type":"u64","index":False}]},{"name":"Opened","fields":[{"name":"userKey","type":"publicKey","index":False},{"name":"dcaKey","type":"publicKey","index":False},{"name":"inDeposited","type":"u64","index":False},{"name":"inputMint","type":"publicKey","index":False},{"name":"outputMint","type":"publicKey","index":False},{"name":"cycleFrequency","type":"i64","index":False},{"name":"inAmountPerCycle","type":"u64","index":False},{"name":"createdAt","type":"i64","index":False}]},{"name":"Closed","fields":[{"name":"userKey","type":"publicKey","index":False},{"name":"dcaKey","type":"publicKey","index":False},{"name":"inDeposited","type":"u64","index":False},{"name":"inputMint","type":"publicKey","index":False},{"name":"outputMint","type":"publicKey","index":False},{"name":"cycleFrequency","type":"i64","index":False},{"name":"inAmountPerCycle","type":"u64","index":False},{"name":"createdAt","type":"i64","index":False},{"name":"totalInWithdrawn","type":"u64","index":False},{"name":"totalOutWithdrawn","type":"u64","index":False},{"name":"unfilledAmount","type":"u64","index":False},{"name":"userClosed","type":"bool","index":False}]},{"name":"Withdraw","fields":[{"name":"dcaKey","type":"publicKey","index":False},{"name":"inAmount","type":"u64","index":False},{"name":"outAmount","type":"u64","index":False},{"name":"userWithdraw","type":"bool","index":False}]},{"name":"Deposit","fields":[{"name":"dcaKey","type":"publicKey","index":False},{"name":"amount","type":"u64","index":False}]}],"errors":[{"code":6000,"name":"InvalidAmount","msg":"Invalid deposit amount"},{"code":6001,"name":"InvalidCycleAmount","msg":"Invalid deposit amount"},{"code":6002,"name":"InvalidPair","msg":"Invalid pair"},{"code":6003,"name":"TooFrequent","msg":"Too frequent DCA cycle"},{"code":6004,"name":"InvalidMinPrice","msg":"Minimum price constraint must be greater than 0"},{"code":6005,"name":"InvalidMaxPrice","msg":"Maximum price constraint must be greater than 0"},{"code":6006,"name":"InAmountInsufficient","msg":"In amount needs to be more than in amount per cycle"},{"code":6007,"name":"Unauthorized","msg":"Wrong user"},{"code":6008,"name":"NoInATA","msg":"inAta not passed in"},{"code":6009,"name":"NoUserInATA","msg":"userInAta not passed in"},{"code":6010,"name":"NoOutATA","msg":"outAta not passed in"},{"code":6011,"name":"NoUserOutATA","msg":"userOutAta not passed in"},{"code":6012,"name":"InsufficientBalanceInProgram","msg":"Trying to withdraw more than available"},{"code":6013,"name":"InvalidDepositAmount","msg":"Deposit should be more than 0"},{"code":6014,"name":"UserInsufficientBalance","msg":"User has insufficient balance"},{"code":6015,"name":"UnauthorizedKeeper","msg":"Unauthorized Keeper"},{"code":6016,"name":"UnrecognizedProgram","msg":"Unrecognized Program"},{"code":6017,"name":"MathErrors","msg":"Calculation errors"},{"code":6018,"name":"KeeperNotTimeToFill","msg":"Not time to fill"},{"code":6019,"name":"OrderFillAmountWrong","msg":"Order amount wrong"},{"code":6020,"name":"SwapOutAmountBelowMinimum","msg":"Out amount below expectations"},{"code":6021,"name":"WrongAdmin","msg":"Wrong admin"},{"code":6022,"name":"MathOverflow","msg":"Overflow in arithmetic operation"},{"code":6023,"name":"AddressMismatch","msg":"Address Mismatch"},{"code":6024,"name":"ProgramMismatch","msg":"Program Mismatch"},{"code":6025,"name":"IncorrectRepaymentAmount","msg":"Incorrect Repayment Amount"},{"code":6026,"name":"CannotBorrowBeforeRepay","msg":"Cannot Borrow Before Repay"},{"code":6027,"name":"NoRepaymentInstructionFound","msg":"No Repayment Found"},{"code":6028,"name":"MissingSwapInstructions","msg":"Missing Swap Instruction"},{"code":6029,"name":"UnexpectedSwapProgram","msg":"Expected Instruction to use Jupiter Swap Program"},{"code":6030,"name":"UnknownInstruction","msg":"Unknown Instruction"},{"code":6031,"name":"MissingRepayInstructions","msg":"Missing Repay Instruction"},{"code":6032,"name":"KeeperShortchanged","msg":"Keeper Shortchanged"},{"code":6033,"name":"WrongSwapOutAccount","msg":"Jup Swap to Wrong Out Account"},{"code":6034,"name":"WrongTransferAmount","msg":"Transfer amount should be exactly account balance"},{"code":6035,"name":"InsufficientBalanceForRent","msg":"Insufficient balance for rent"},{"code":6036,"name":"UnexpectedSolBalance","msg":"Unexpected SOL amount in intermediate account"},{"code":6037,"name":"InsufficientWsolForTransfer","msg":"Too little WSOL to perform transfer"},{"code":6038,"name":"MissedInstruction","msg":"Did not call initiate_flash_fill"},{"code":6039,"name":"WrongProgram","msg":"Did not call this program's initiate_flash_fill"},{"code":6040,"name":"BalanceNotZero","msg":"Can't close account with balance"},{"code":6041,"name":"UnexpectedWSOLLeftover","msg":"Should not have WSOL leftover in DCA out-token account"},{"code":6042,"name":"IntermediateAccountNotSet","msg":"Should pass in a WSOL intermediate account when transferring SOL"},{"code":6043,"name":"UnexpectedSwapInstruction","msg":"Did not call jup swap"}]}
-    
-    def __init__(
-        self,
-        async_client: AsyncClient,
-        keypair: Keypair
-    ):
-        self.rpc = async_client
+
+    def __init__(self, client: Client, keypair: Keypair):  # Change to sync Client
+        self.rpc = client
         self.keypair = keypair  
         self.dca_program = AnchorProgram(
             idl=Idl.from_json(json.dumps(self.IDL)),
@@ -50,8 +47,8 @@ class Jupiter_DCA():
                 opts=TxOpts(skip_preflight=True, preflight_commitment=Processed)
             )
         )
-    
-    async def get_mint_token_program(
+
+    def get_mint_token_program(
         self,
         token_mint: Pubkey,
     ) -> Pubkey:
@@ -76,12 +73,12 @@ class Jupiter_DCA():
                 TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA,
             )
         """
-        
-        mint_token_program_info = await self.rpc.get_account_info(token_mint)
+
+        mint_token_program_info = self.rpc.get_account_info(token_mint)
         mint_token_program = mint_token_program_info.value.owner
         return mint_token_program
-        
-    async def get_or_create_associated_token_address(
+
+    def get_or_create_associated_token_address(
         self,
         token_mint: Pubkey,
     ) -> dict:
@@ -148,19 +145,19 @@ class Jupiter_DCA():
                 },
             )}
         """
-        
+
         toAccount = get_associated_token_address(self.keypair.pubkey(), token_mint)
-        accountInfo = await self.rpc.get_account_info(toAccount)
+        accountInfo = self.rpc.get_account_info(toAccount)
         account = accountInfo.value
-        
+
         if account:
             instruction = None
             return {'pubkey': toAccount, 'instruction': instruction}
         else:
             instruction = create_associated_token_account(self.keypair.pubkey(), self.keypair.pubkey(), token_mint)
             return {'pubkey': toAccount, 'instruction': instruction}
-    
-    async def get_dca_pubkey(
+
+    def get_dca_pubkey(
         self,
         input_mint: Pubkey,
         output_mint: Pubkey,
@@ -191,7 +188,7 @@ class Jupiter_DCA():
                 ArotVdXCEw4Zy5ywUVP7ZJBPFvXR8v8Md6jSQK9pLaCb,
             )
         """ 
-            
+
         dcaPubKey = Pubkey.find_program_address(
             seeds=[
             b'dca',
@@ -204,7 +201,7 @@ class Jupiter_DCA():
         )
         return dcaPubKey[0]
 
-    async def fetch_dca_data(
+    def fetch_dca_data(
         self,
         dca_pubkey: Pubkey,
     ) -> Container[Any]:
@@ -237,22 +234,22 @@ class Jupiter_DCA():
             ), min_out_amount=0, max_out_amount=0, keeper_in_balance_before_borrow=0, dca_out_balance_before_swap=0, created_at=1703050997, bump=253)
         """ 
         dca_account_coder = AccountsCoder(idl=Idl.from_json(json.dumps(self.IDL)))
-        get_dca_account_details  = await self.rpc.get_account_info(dca_pubkey)
+        get_dca_account_details = self.rpc.get_account_info(dca_pubkey)
         dca_account_details = get_dca_account_details.value.data
         dca_account_decoded_details = dca_account_coder.decode(dca_account_details)
         return dca_account_decoded_details
 
-    async def create_dca(
+    def create_dca(
         self,
         input_mint: Pubkey,
         output_mint: Pubkey,
         total_in_amount: int,
         in_amount_per_cycle: int,
         cycle_frequency: int,
-        min_out_amount_per_cycle: int=None,
-        max_out_amount_per_cycle: int=None,
-        start_at: int=0,
-        ) -> dict:
+        min_out_amount_per_cycle: int = None,
+        max_out_amount_per_cycle: int = None,
+        start_at: int = 0,
+    ) -> dict:
         """Setting up a DCA account with signing and sending the transaction.
         
         Args:
@@ -289,15 +286,17 @@ class Jupiter_DCA():
                 'transaction_hash': '5zFwgyHExYcWLTgqh6GMDPML2mPHzmJUFfsVD882tYd4oGhekiDufcBZSbcoNFKxvhRLQt8WwYU4SsW8fCefYmHf'
             }
         """
-        
+
         pre_instructions = []
         post_instructions = []
-    
-        input_token_program, output_token_program = await self.get_mint_token_program(input_mint), await self.get_mint_token_program(output_mint)
+
+        input_token_program, output_token_program = self.get_mint_token_program(
+            input_mint
+        ), self.get_mint_token_program(output_mint)
         user_input_account = get_associated_token_address(self.keypair.pubkey(), input_mint)
-        
+
         if input_mint == WRAPPED_SOL_MINT:
-            input_mint_ata = await self.get_or_create_associated_token_address(input_mint)
+            input_mint_ata = self.get_or_create_associated_token_address(input_mint)
             transfer_IX = transfer(TransferParams(
                 from_pubkey=self.keypair.pubkey(),
                 to_pubkey=user_input_account,
@@ -307,7 +306,7 @@ class Jupiter_DCA():
                 program_id=input_token_program,
                 account=user_input_account
             ))
-            
+
             if input_mint_ata['instruction']:
                 pre_instructions.append(input_mint_ata['instruction'])
                 post_instructions.append(close_account(
@@ -318,18 +317,18 @@ class Jupiter_DCA():
                         owner=self.keypair.pubkey()
                     )
                 ))
-                
+
             pre_instructions.append(transfer_IX)
             pre_instructions.append(sync_native_IX)
-        
+
         if output_mint != WRAPPED_SOL_MINT:
-            output_mint_ata = await self.get_or_create_associated_token_address(output_mint)
-            
+            output_mint_ata = self.get_or_create_associated_token_address(output_mint)
+
             if output_mint_ata['instruction']:
                 pre_instructions.append(output_mint_ata['instruction'])
-        
+
         uid = int(time.time())
-        dca_pubkey = await self.get_dca_pubkey(input_mint, output_mint, uid)
+        dca_pubkey = self.get_dca_pubkey(input_mint, output_mint, uid)
 
         accounts = {
             'dca': dca_pubkey,
@@ -347,7 +346,7 @@ class Jupiter_DCA():
             'program': self.DCA_PROGRAM_ID 
         }
 
-        transaction = await self.dca_program.rpc['open_dca'](
+        transaction = self.dca_program.rpc["open_dca"](
             uid,
             total_in_amount,
             in_amount_per_cycle,
@@ -360,14 +359,13 @@ class Jupiter_DCA():
                 accounts=accounts,
                 signers=[self.keypair],
                 pre_instructions=pre_instructions,
-                # post_instructions=post_instructions,
-                options=TxOpts(skip_preflight=False, preflight_commitment=Processed)
-            )
+                options=TxOpts(skip_preflight=False, preflight_commitment=Processed),
+            ),
         )
 
         return {'dca_pubkey': dca_pubkey, 'transaction_hash': str(transaction)}
 
-    async def close_dca(
+    def close_dca(
         self,
         dca_pubkey: Pubkey,
     ) -> str:
@@ -389,15 +387,17 @@ class Jupiter_DCA():
             >>> close_dca = await jupiter.dca.close_dca(dca_pubkey)
             HXiWtTPLjgtiuNoAN7CEfyDyftdsAnMfuQ93Yp1vukgBbdU1Lb2Bo59p48PVr7CMhxPDwGQbsfjvKT5HXXQfvE2
         """
-        dca_account = await self.fetch_dca_data(dca_pubkey)
+        dca_account = self.fetch_dca_data(dca_pubkey)
         input_mint = dca_account.input_mint
         output_mint = dca_account.output_mint
-        input_token_program, output_token_program = await self.get_mint_token_program(input_mint), await self.get_mint_token_program(output_mint)
+        input_token_program, output_token_program = self.get_mint_token_program(
+            input_mint
+        ), self.get_mint_token_program(output_mint)
         user_input_account = get_associated_token_address(self.keypair.pubkey(), input_mint)
         user_output_account = get_associated_token_address(self.keypair.pubkey(), output_mint)
         reserve_input_account = get_associated_token_address(dca_pubkey, input_mint)
         reserve_output_account = get_associated_token_address(dca_pubkey, output_mint)
-        
+
         accounts = {
             'user': self.keypair.pubkey(),
             'dca': dca_pubkey,
@@ -413,13 +413,11 @@ class Jupiter_DCA():
             'event_authority': Pubkey.from_string("Cspp27eGUDMXxPEdhmEXFVRn6Lt1L7xJyALF3nmnWoBj"),
             'program': self.DCA_PROGRAM_ID 
         }
-        transaction = await self.dca_program.rpc['close_dca'](
+        transaction = self.dca_program.rpc["close_dca"](
             ctx=Context(
                 accounts=accounts,
                 signers=[self.keypair],
-                # pre_instructions=pre_instructions,
-                # post_instructions=post_instructions,
-                options=TxOpts(skip_preflight=False, preflight_commitment=Processed)
+                options=TxOpts(skip_preflight=False, preflight_commitment=Processed),
             )
         )
         return str(transaction)
@@ -472,7 +470,7 @@ class Jupiter_DCA():
         """
         user_dca_accounts = httpx.get(f"https://dca-api.jup.ag/user/{wallet_address}/dca?status={status}", timeout=Timeout(timeout=30.0)).json()
         return user_dca_accounts
-    
+
     @staticmethod
     async def fetch_dca_account_fills_history(
         dca_account_address: str,
@@ -510,7 +508,7 @@ class Jupiter_DCA():
         """
         dca_account_fills_history = httpx.get(f"https://dca-api.jup.ag/dca/{dca_account_address}/fills", timeout=Timeout(timeout=30.0)).json()
         return dca_account_fills_history
-          
+
     @staticmethod
     async def get_available_dca_tokens(
     ) -> list:
@@ -524,9 +522,9 @@ class Jupiter_DCA():
         """
         available_dca_tokens = httpx.get(f"https://cache.jup.ag/top-tokens", timeout=Timeout(timeout=30.0)).json()
         return available_dca_tokens
-    
+
 class Jupiter():
-    
+
     ENDPOINT_APIS_URL = {
         "QUOTE": "https://quote-api.jup.ag/v6/quote?",
         "SWAP": "https://quote-api.jup.ag/v6/swap",
@@ -536,23 +534,23 @@ class Jupiter():
         "QUERY_ORDER_HISTORY": "https://jup.ag/api/limit/v1/orderHistory",
         "QUERY_TRADE_HISTORY": "https://jup.ag/api/limit/v1/tradeHistory"
     }
-    
+
     def __init__(
         self,
-        async_client: AsyncClient,
+        client: Client,  # Change to sync Client
         keypair: Keypair,
-        quote_api_url: str="https://quote-api.jup.ag/v6/quote?",
-        swap_api_url: str="https://quote-api.jup.ag/v6/swap",
-        open_order_api_url: str="https://jup.ag/api/limit/v1/createOrder",
-        cancel_orders_api_url: str="https://jup.ag/api/limit/v1/cancelOrders",
-        query_open_orders_api_url: str="https://jup.ag/api/limit/v1/openOrders?wallet=",
-        query_order_history_api_url: str="https://jup.ag/api/limit/v1/orderHistory",
-        query_trade_history_api_url: str="https://jup.ag/api/limit/v1/tradeHistory",
+        quote_api_url: str = "https://quote-api.jup.ag/v6/quote?",
+        swap_api_url: str = "https://quote-api.jup.ag/v6/swap",
+        open_order_api_url: str = "https://jup.ag/api/limit/v1/createOrder",
+        cancel_orders_api_url: str = "https://jup.ag/api/limit/v1/cancelOrders",
+        query_open_orders_api_url: str = "https://jup.ag/api/limit/v1/openOrders?wallet=",
+        query_order_history_api_url: str = "https://jup.ag/api/limit/v1/orderHistory",
+        query_trade_history_api_url: str = "https://jup.ag/api/limit/v1/tradeHistory",
     ):
-        self.dca = Jupiter_DCA(async_client, keypair)
-        self.rpc = async_client
+        self.dca = Jupiter_DCA(client, keypair)  # Use sync client directly
+        self.rpc = client
         self.keypair = keypair
-        
+
         self.ENDPOINT_APIS_URL["QUOTE"] = quote_api_url
         self.ENDPOINT_APIS_URL["SWAP"] = swap_api_url
         self.ENDPOINT_APIS_URL["OPEN_ORDER"] = open_order_api_url
@@ -560,19 +558,19 @@ class Jupiter():
         self.ENDPOINT_APIS_URL["QUERY_OPEN_ORDERS"] = query_open_orders_api_url
         self.ENDPOINT_APIS_URL["QUERY_ORDER_HISTORY"] = query_order_history_api_url
         self.ENDPOINT_APIS_URL["QUERY_TRADE_HISTORY"] = query_trade_history_api_url
-    
-    async def quote(
+
+    def quote(
         self,
         input_mint: str,
         output_mint: str,
         amount: int,
-        slippage_bps: int=None,
-        swap_mode: str="ExactIn",
-        only_direct_routes: bool=False,
-        as_legacy_transaction: bool=False,
-        exclude_dexes: list=None,
-        max_accounts: int=None,
-        platform_fee_bps: int=None
+        slippage_bps: int = None,
+        swap_mode: str = "ExactIn",
+        only_direct_routes: bool = False,
+        as_legacy_transaction: bool = False,
+        exclude_dexes: list = None,
+        max_accounts: int = None,
+        platform_fee_bps: int = None,
     ) -> dict:
         """Get the best swap route for a token trade pair sorted by largest output token amount from https://quote-api.jup.ag/v6/quote
         
@@ -617,7 +615,7 @@ class Jupiter():
                 'contextSlot': 236625263,
                 'timeTaken': 0.069434356}
         """
-        
+
         quote_url = self.ENDPOINT_APIS_URL['QUOTE'] + "inputMint=" + input_mint + "&outputMint=" + output_mint + "&amount=" + str(amount) + "&swapMode=" + swap_mode + "&onlyDirectRoutes=" + str(only_direct_routes).lower() + "&asLegacyTransaction=" + str(as_legacy_transaction).lower()
         if slippage_bps:
             quote_url += "&slippageBps=" + str(slippage_bps)
@@ -627,7 +625,7 @@ class Jupiter():
             quote_url += "&maxAccounts=" + str(max_accounts)
         if platform_fee_bps:
             quote_url += "&plateformFeeBps=" + platform_fee_bps
-        
+
         quote_response = httpx.get(url=quote_url).json()
         try:
             quote_response['routePlan']
@@ -635,24 +633,24 @@ class Jupiter():
         except:
             raise Exception(quote_response['error'])
 
-    async def swap(
+    def swap(
         self,
         input_mint: str,
         output_mint: str,
-        amount: int=0,
-        quoteResponse: str=None,
-        wrap_unwrap_sol: bool=True,
-        slippage_bps: int=1,
-        swap_mode: str="ExactIn",
-        prioritization_fee_lamports: int=None,
-        only_direct_routes: bool=False,
-        as_legacy_transaction: bool=False,
-        exclude_dexes: list=None,
-        max_accounts: int=None,
-        platform_fee_bps: int=None
+        amount: int = 0,
+        quoteResponse: str = None,
+        wrap_unwrap_sol: bool = True,
+        slippage_bps: int = 1,
+        swap_mode: str = "ExactIn",
+        prioritization_fee_lamports: int = None,
+        only_direct_routes: bool = False,
+        as_legacy_transaction: bool = False,
+        exclude_dexes: list = None,
+        max_accounts: int = None,
+        platform_fee_bps: int = None,
     ) -> str:
         """Perform a swap.
-        
+
         Args:
             Required:
                 ``input_mint (str)``: Input token mint str\n
@@ -668,10 +666,10 @@ class Jupiter():
                 ``exclude_dexes (list)``: Default is that all DEXes are included. You can pass in the DEXes that you want to exclude in a list. For example, ['Aldrin','Saber'].\n
                 ``max_accounts (int)``: Find a route given a maximum number of accounts involved, this might dangerously limit routing ending up giving a bad price. The max is an estimation and not the exact count.\n
                 ``platform_fee_bps (int)``: If you want to charge the user a fee, you can specify the fee in BPS. Fee % is taken out of the output token.
-        
+
         Returns:
             ``str``: returns serialized transactions to perform the swap from https://quote-api.jup.ag/v6/swap
-            
+
         Example:
             >>> rpc_url = "https://neat-hidden-sanctuary.solana-mainnet.discover.quiknode.pro/2af5315d336f9ae920028bbb90a73b724dc1bbed/"
             >>> async_client = AsyncClient(rpc_url)
@@ -682,21 +680,21 @@ class Jupiter():
             >>> output_mint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
             >>> amount = 5_000_000
             >>> transaction_data = await jupiter.swap(user_public_key, input_mint, output_mint, amount)
-            AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAJDpQzg6Gwmq0Gtgp4+LWUVz0yQOAuHGNJAGTs0dcqEMVCoh2aSWdVMvcatcojrWtwXATiOw7/o5hE7NFuy3p8vgLfsLhf7Ff9NofcPgIyAbMytm5ggTyKwmR+JqgXUXARVfefILshj4ZhFSjUfRpiSI47mVNFUq9v5NOOCWSEZJZM/GHGfBesEb9blQsf7DnKodziY279S/OPkZf0/OalnPEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMGRm/lIRcy/+ytunLDm+e8jOW7xfcSayxDmzpAAAAABHnVW/IxwG7udMVuzmgVB/2xst6j9I5RArHNola8E48Gm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpT0tsDkEI/SpqJHjq4KzFnbIbtO31EcFiz2AtHgwJAfuMlyWPTiSJ8bs9ECkUjg2DC1oTmdr/EIQEjnvY2+n4WbQ/+if11/ZKdMCbHylYed5LCas238ndUUsyGqezjOXoxvp6877brTo9ZfNqq8l0MbG75MLS9uDkfKYCA0UvXWHmraeknnR8/memFAZWZHeDMQG7C5ZFLxolWUniPl6SYgcGAAUCwFwVAAYACQNIDQAAAAAAAAsGAAMACAUJAQEFAgADDAIAAAAgTgAAAAAAAAkBAwERBx8JCgADAQIECA0HBwwHGREBAhUOFxMWDxIQFAoYCQcHJMEgmzNB1pyBBwEAAAATZAABIE4AAAAAAACHBQAAAAAAADIAAAkDAwAAAQkB1rO1s+JVEuIRoGsE8f2MlAkFWssCkimIonlHpLV2w4gKBwKRTE0SjIeLSwIICg==
+            AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAQAJDpQzg6Gwmq0Gtgp4+LWUVz0yQOAuHGNJAGTs0dcqEMVCBvqBKhFi2uRFEKYI4zPatxbdm7DylvnQUby9MexSmeAdsqhWUMQ86Ddz4+7pQFooE6wLglATS/YvzOVUNMOqnyAmC8Ioh9cSvEZniys4XY0OyEvxe39gSdHqlHWJQUPMn4prs0EwIc9JznmgzyMliG5PJTvaFYw75ssASGlB2gMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAImg/TLoYktlelMGKAi4mA0icnTD92092qSZhd3wNABMCv4fVqQvV1OYZ3a3bH43JpI5pIln+UAHnO1fyDJwCfIGm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpT0tsDkEI/SpqJHjq4KzFnbIbtO31EcFiz2AtHgwJAfuMlyWPTiSJ8bs9ECkUjg2DC1oTmdr/EIQEjnvY2+n4WbQ/+if11/ZKdMCbHylYed5LCas238ndUUsyGqezjOXoxvp6877brTo9ZfNqq8l0MbG75MLS9uDkfKYCA0UvXWHmraeknnR8/memFAZWZHeDMQG7C5ZFLxolWUniPl6SYgcGAAUCwFwVAAYACQNIDQAAAAAAAAsGAAMACAUJAQEFAgADDAIAAAAgTgAAAAAAAAkBAwERBx8JCgADAQIECA0HBwwHGREBAhUOFxMWDxIQFAoYCQcHJMEgmzNB1pyBBwEAAAATZAABIE4AAAAAAACHBQAAAAAAADIAAAkDAwAAAQkB1rO1s+JVEuIRoGsE8f2MlAkFWssCkimIonlHpLV2w4gKBwKRTE0SjIeLSwIICg==
         """
-        
+
         if quoteResponse is None:
-            quoteResponse = await self.quote(
-            input_mint=input_mint,
-            output_mint=output_mint,
-            amount=amount,
-            slippage_bps=slippage_bps,
-            swap_mode=swap_mode,
-            only_direct_routes=only_direct_routes,
-            as_legacy_transaction=as_legacy_transaction,
-            exclude_dexes=exclude_dexes,
-            max_accounts=max_accounts,
-            platform_fee_bps=platform_fee_bps
+            quoteResponse = self.quote(
+                input_mint=input_mint,
+                output_mint=output_mint,
+                amount=amount,
+                slippage_bps=slippage_bps,
+                swap_mode=swap_mode,
+                only_direct_routes=only_direct_routes,
+                as_legacy_transaction=as_legacy_transaction,
+                exclude_dexes=exclude_dexes,
+                max_accounts=max_accounts,
+                platform_fee_bps=platform_fee_bps,
             )
         transaction_parameters = {
             "quoteResponse": quoteResponse,
@@ -708,13 +706,13 @@ class Jupiter():
         transaction_data = httpx.post(url=self.ENDPOINT_APIS_URL['SWAP'], json=transaction_parameters).json()
         return transaction_data['swapTransaction']
 
-    async def open_order(
+    def open_order(
         self,
         input_mint: str,
         output_mint: str,
-        in_amount: int=0,
-        out_amount: int=0,
-        expired_at: int=None
+        in_amount: int = 0,
+        out_amount: int = 0,
+        expired_at: int = None,
     ) -> dict:
         """Open an order.
         
@@ -746,7 +744,7 @@ class Jupiter():
                     2Pip6gx9FLGVqmRqfAgwJ8HEuCY8ZbUbVERR18vHyxFngSi3Jxq8Vkpm74hS5zq7RAM6tqGUAkf3ufCBsxGXZrUC,)
             }
         """
-        
+
         keypair = Keypair()
         transaction_parameters = {
             "owner": self.keypair.pubkey().__str__(),
@@ -763,10 +761,7 @@ class Jupiter():
         signature2 = keypair.sign_message(message.to_bytes_versioned(raw_transaction.message))
         return {"transaction_data": transaction_data, "signature2": signature2}
 
-    async def cancel_orders(
-        self,
-        orders: list=[]
-    ) -> str:
+    def cancel_orders(self, orders: list = []) -> str:
         """Cancel open orders from a list (max. 10).
         
         Args:
@@ -785,7 +780,7 @@ class Jupiter():
             >>> transaction_data = await jupiter.cancel_orders(orders=openOrders)
             AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAQIlDODobCarQa2Cnj4tZRXPTJA4C4cY0kAZOzR1yoQxUIklPdDonxNd5JDfdYoHE56dvNBQ1SLN90fFZxvVlzZr9DPwpfbd+ANTB35SSvHYVViD27UZR578oC2faxJea7y958guyGPhmEVKNR9GmJIjjuZU0VSr2/k044JZIRklkwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAr+H1akL1dTmGd2t2x+NyaSOaSJZ/lAB5ztX8gycAnyBpuIV/6rgYT7aH9jRhjANdrEOdwa6ztVmKDwAAAAAAEG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqW9ZjNTy3JS6YYFodCWqtWH80+eLPmN4igHrkYHIsdQfAQUHAQIAAwQHBghfge3wCDHfhA==
         """
-        
+
         transaction_parameters = {
             "owner": self.keypair.pubkey().__str__(),
             "feePayer": self.keypair.pubkey().__str__(), 
@@ -831,13 +826,13 @@ class Jupiter():
                 }
             ]      
         """
-        
+
         query_openorders_url = "https://jup.ag/api/limit/v1/openOrders?wallet=" + wallet_address
         if input_mint:
             query_openorders_url += "inputMint=" + input_mint
         if output_mint:
             query_openorders_url += "outputMint" + output_mint
-            
+
         list_open_orders = httpx.get(query_openorders_url, timeout=Timeout(timeout=30.0)).json()
         return list_open_orders
 
@@ -883,7 +878,7 @@ class Jupiter():
                 }
             ]
         """
-        
+
         query_orders_history_url = "https://jup.ag/api/limit/v1/orderHistory" + "?wallet=" + wallet_address
         if cursor:
             query_orders_history_url += "?cursor=" + str(cursor)
@@ -891,7 +886,7 @@ class Jupiter():
             query_orders_history_url += "?skip=" + str(skip)
         if take:
             query_orders_history_url += "?take=" + str(take)
-            
+
         list_orders_history = httpx.get(query_orders_history_url, timeout=Timeout(timeout=30.0)).json()
         return list_orders_history
 
@@ -939,7 +934,7 @@ class Jupiter():
                 }
             ]
         """
-        
+
         query_tradeHistoryUrl = "https://jup.ag/api/limit/v1/tradeHistory" + "?wallet=" + wallet_address
         if input_mint:
             query_tradeHistoryUrl += "inputMint=" + input_mint
@@ -951,10 +946,10 @@ class Jupiter():
             query_tradeHistoryUrl += "?skip=" + skip
         if take:
             query_tradeHistoryUrl += "?take=" + take
-            
+
         tradeHistory = httpx.get(query_tradeHistoryUrl, timeout=Timeout(timeout=30.0)).json()
         return tradeHistory
-    
+
     @staticmethod
     async def get_indexed_route_map(
     ) -> dict:
@@ -967,7 +962,7 @@ class Jupiter():
         Example:
             >>> indexed_route_map = await Jupiter.get_indexed_route_map()
         """
-        
+
         indexed_route_map = httpx.get("https://quote-api.jup.ag/v6/indexed-route-map", timeout=Timeout(timeout=30.0)).json()
         return indexed_route_map
 
@@ -997,7 +992,7 @@ class Jupiter():
         Example:
         >>> tokens_list = await Jupiter.get_tokens_list()
         """
-        
+
         tokens_list_url = "https://token.jup.ag/"  + list_type
         if banned_tokens is True:
             tokens_list_url +=  "?includeBanned=true"
@@ -1053,7 +1048,7 @@ class Jupiter():
         swap_pairs_url = "https://stats.jup.ag/coingecko/tickers?ticker_id=" + input_mint + "_" + output_mint
         swap_pairs_list = httpx.get(swap_pairs_url, timeout=Timeout(timeout=30.0)).json()
         return swap_pairs_list
-    
+
     @staticmethod
     async def get_token_stats_by_date(
         token: str,
