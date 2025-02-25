@@ -20,7 +20,8 @@ setup(
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
     long_description=long_description,
-    packages=find_packages(),
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
     license=("LICENSE.txt"),
     install_requires=[
         "base58",
